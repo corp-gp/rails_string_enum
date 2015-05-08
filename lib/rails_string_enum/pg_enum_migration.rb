@@ -130,7 +130,7 @@ module PgEnumMigrations
 
     execute "CREATE TYPE #{enum_name(enum_name, schema)} AS ENUM (#{escape_enum_values(keys)})" unless use_exist_enum
 
-    default_sql = ", ALTER COLUMN #{col_name} DROP DEFAULT" if default
+    default_sql = ", ALTER COLUMN #{col_name} SET DEFAULT '#{default}'" if default
 
     execute <<-SQL
       ALTER TABLE #{table}

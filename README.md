@@ -30,7 +30,7 @@ reorder_enum_values :order_state_enum, %w(black white) # other color will be lat
 
 delete_enum_value :color, 'black'
 # you should delete record with deleting value
-# if exists index with condition method raise exeption
+# if exists index with condition, method raise exception
 # "ERROR: operator does not exist: order_type_enum <> order_type_enum_new"
 # you should first remove and then create an index
   Product.where(color: 'black').delete_all # or Product.where(color: 'black').update_all(state: nil)
@@ -41,7 +41,7 @@ delete_enum_value :color, 'black'
 
 ###### Convert exist columns (int, string) to postgresql enum
 ```ruby
-string_to_enums :product, :color, enum_name: 'product_color_enum', definitions: %w(red green blue)
+string_to_enums :product, :color, enum_name: 'product_color_enum', definitions: %w(red green blue), default: 'green'
 string_to_enums :product, :color, enum_name: 'product_color_enum', definitions: Product.uniq.pluck(:color)
 
 int_to_enums :product, :color, enum_name: 'product_color_enum', definitions: { red: 0, green: 1, blue: 2 }
