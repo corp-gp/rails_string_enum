@@ -6,7 +6,7 @@ require 'rails_string_enum/version'
 Gem::Specification.new do |spec|
   spec.name          = "rails_string_enum"
   spec.version       = RailsStringEnum::VERSION
-  spec.authors       = ["Ermolaev Andrey"]
+  spec.authors       = ["ermolaev"]
   spec.email         = ["andrey@ermolaev.me"]
 
   spec.summary       = %q{support in rails db enums or string (using as flexible enum)}
