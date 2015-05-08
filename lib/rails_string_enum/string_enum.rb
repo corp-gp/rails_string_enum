@@ -100,8 +100,9 @@ module RailsStringEnum
   def define_collection_i18n_method_for_value(klass, attr_name, i18n_scope)
     attr_i18n_method_name = "#{attr_name}_i18n"
 
-    klass.class_eval <<-METHOD, __FILE__, __LINE__
-      def #{attr_i18n_method_name}_for
+    klass.instance_eval <<-METHOD, __FILE__, __LINE__
+      def #{attr_i18n_method_name}_for(enum_label)
+        return nil unless enum_label
         #{ruby_string_for_enum_label(klass, attr_name, i18n_scope)}
       end
     METHOD
