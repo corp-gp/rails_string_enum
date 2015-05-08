@@ -65,7 +65,7 @@ class CreateTables < ActiveRecord::Migration
 end
 
 class Product < ActiveRecord::Base
-  string_enum :color, %w(red green yellow black white), scope: true # default false
+  string_enum :color, %w(red green yellow black white), scopes: true # default false
   
   def self.colored
     where.not(color: [COLOR::BLACK, COLOR::WHITE])
@@ -87,7 +87,7 @@ Product::COLOR::GREEN # => "green"
 
 Product.color_i18n_for('red') # => 'Красный'
 Product.colors_i18n # => {green: 'Зеленый', red: 'Красный', yellow: 'Желтый'}
-Product.red # if scope: true
+Product.red # if scopes: true
 ```
 
 
