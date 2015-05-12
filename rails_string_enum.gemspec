@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
   spec.email         = ["andrey@ermolaev.me"]
 
   spec.summary       = %q{support in rails db enums or string (using as flexible enum)}
-  spec.description   = %q{migration methods for postgresql, internationalization, simple_form}
+  spec.description   = %q{migration methods for postgresql enum, internationalization, simple_form}
   spec.homepage      = 'https://github.com/ermolaev/rails_string_enum'
   spec.license       = "MIT"
 
@@ -23,4 +23,6 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "rake", "~> 10.0"
 
   spec.add_dependency "activerecord", "~> 4.2"
+  
+  spec.required_ruby_version = '~> 2.0'
 end

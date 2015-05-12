@@ -11,13 +11,6 @@ module RailsStringEnum
     const_name_all_values = name.to_s.pluralize.upcase
     const_set const_name_all_values, enums.map(&:to_s)
 
-    # create constant for each value
-    # Product::COLOR::RED # => "red"
-    # Product::COLOR::GREEN #=> "green"
-    new_module = const_set name.to_s.upcase, Module.new
-    enums.each { |const| new_module.const_set(const.to_s.upcase, const.to_s) }
-
-
     klass = self
     enums.each do |value|
       # def red?() color == 'red' end
@@ -33,6 +26,9 @@ module RailsStringEnum
         klass.send(:detect_enum_conflict!, name, value, true)
         klass.scope value, -> { klass.where name => value }
       end
+
+      # Product::RED #=> "red"
+      const_set value.to_s.upcase, value.to_s
     end
 
     define_attr_i18n_method(self, name, i18n_scope)

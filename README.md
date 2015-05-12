@@ -11,6 +11,9 @@ Add this line to your application's Gemfile:
 
 Tested on Rails 4.2, ruby 2.2
 
+#### Broken changes from 0.1 to 0.2
+`Product::COLOR::GREEN => Product::GREEN`
+
 #### Native postgresql enum (migrations)
 ```ruby
 
@@ -68,7 +71,7 @@ class Product < ActiveRecord::Base
   string_enum :color, %w(red green yellow black white), scopes: true # default false
   
   def self.colored
-    where.not(color: [COLOR::BLACK, COLOR::WHITE])
+    where.not(color: [BLACK, WHITE])
   end
 end
 
@@ -77,8 +80,8 @@ class Page < ActiveRecord::Base
 end
 
 Product::COLORS # => ["red", "green", "yellow"]
-Product::COLOR::RED # => "red"
-Product::COLOR::GREEN # => "green"
+Product::RED # => "red"
+Product::GREEN # => "green"
 
 @product = Product.new
 @product.color_i18n  # => nil
