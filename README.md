@@ -12,7 +12,10 @@ Add this line to your application's Gemfile:
 Tested on Rails 4.2, ruby 2.2
 
 #### Broken changes from 0.1 to 0.2
-`Product::COLOR::GREEN => Product::GREEN`
+`Product::COLOR::GREEN -> Product::GREEN`
+
+#### Broken changes from 0.2 to 0.3
+`added prefix for scopes: Product.red -> Product.only_red or Product.only_reds`
 
 #### Native postgresql enum (migrations)
 ```ruby
@@ -90,7 +93,8 @@ Product::GREEN # => "green"
 
 Product.color_i18n_for('red') # => 'Красный'
 Product.colors_i18n # => {green: 'Зеленый', red: 'Красный', yellow: 'Желтый'}
-Product.red # if scopes: true
+Product.only_red # if scopes: true
+Product.only_reds # if scopes: { pluralize: true }
 ```
 
 

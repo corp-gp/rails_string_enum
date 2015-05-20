@@ -3,7 +3,7 @@ module RailsStringEnum
   # product.rb
   # string_enum :color, %w(red green yellow)
   # page.rb
-  # string_enum :background, %w(red green), i18n_scope: 'product.color'
+  # string_enum :background, %w(red green), i18n_scope: 'product.color', scopes: { pluralize: true }
 
   def string_enum(name, enums, scopes: false, i18n_scope: nil)
     # create constant with all values
@@ -22,9 +22,11 @@ module RailsStringEnum
       define_method("#{value}!") { update! name => value }
 
       if scopes
-        # scope :red, -> { where color: 'red' }
-        klass.send(:detect_enum_conflict!, name, value, true)
-        klass.scope value, -> { klass.where name => value }
+        # scope :only_red, -> { where color: 'red' }
+        # scope :only_reds, -> { where color: 'red' } # if scopes: { pluralize: true }
+        scope_name = scopes.try(:fetch, :pluralize, nil) ? "only_#{value.to_s.pluralize}" : "only_#{value}"
+        klass.send(:detect_enum_conflict!, name, scope_name, true)
+        klass.scope scope_name, -> { klass.where name => value }
       end
 
       # Product::RED #=> "red"
