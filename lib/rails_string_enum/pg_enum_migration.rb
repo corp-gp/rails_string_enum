@@ -59,11 +59,11 @@ module PgEnumMigrations
 
 
   # rename_enum_value :order_state_enum, 'accept', 'init'
-  def rename_enum_value(enum_name, old_value_name, new_value_name, scheme: nil)
+  def rename_enum_value(enum_name, old_value_name, new_value_name, scheme: 'public')
     execute <<-SQL
       UPDATE pg_catalog.pg_enum
       SET enumlabel = '#{new_value_name}'
-      WHERE enumtypid = #{enum_name_as_srt(enum_name, scheme)}::regtype::oid AND enumlabel = '#{old_value_name}'
+      WHERE enumtypid = '#{scheme}.#{enum_name}'::regtype::oid AND enumlabel = '#{old_value_name}'
     SQL
   end
 

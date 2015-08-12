@@ -16,5 +16,5 @@ require 'rails_string_enum/patch_enum_null' if Rails.version <= "4.2.1"
 begin
   require 'simple_form'
   require 'rails_string_enum/simple_form'
-rescue
+rescue LoadError
 end
