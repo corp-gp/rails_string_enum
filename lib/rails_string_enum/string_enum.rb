@@ -127,4 +127,15 @@ module RailsStringEnum
     %Q{::I18n.t(enum_label, scope: "enums.#{part_scope}", default: enum_label)}
   end
 
+
+  # for combinations constants to array, using `__` for split it
+  # Product::RED__GREEN__YELLOW #=> ["red", "green", "yellow"]
+  # Product::RED__GREEN__BLABLA #=> NameError: uninitialized constant Product::BLABLA
+  def const_missing(name)
+    name_s = name.to_s
+    return super unless name_s.include?('__')
+
+    const_set name_s, name_s.split('__').map { |i| const_get(i) }
+  end
+
 end

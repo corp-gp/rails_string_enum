@@ -86,6 +86,10 @@ Product::COLORS # => ["red", "green", "yellow"]
 Product::RED # => "red"
 Product::GREEN # => "green"
 
+# for combinations constants to array, using `__` for split it
+Product::RED__GREEN__YELLOW #=> ["red", "green", "yellow"]
+Product::RED__GREEN__BLABLA #=> NameError: uninitialized constant Product::BLABLA
+
 @product = Product.new
 @product.color_i18n  # => nil
 @product.red!
