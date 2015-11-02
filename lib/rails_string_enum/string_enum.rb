@@ -13,9 +13,16 @@ module RailsStringEnum
 
     klass = self
     enums.each do |value|
+      # Product::RED #=> "red"
+      const_set value.to_s.upcase, value.to_s
+
       # def red?() color == 'red' end
       klass.send(:detect_enum_conflict!, name, "#{value}?")
-      define_method("#{value}?") { self[name] == value }
+      klass.class_eval <<-METHOD, __FILE__, __LINE__
+        def #{value}?
+          #{name} == #{value.to_s.upcase}
+        end
+      METHOD
 
       # def red!() update! color: :red end
       klass.send(:detect_enum_conflict!, name, "#{value}!")
@@ -28,9 +35,6 @@ module RailsStringEnum
         klass.send(:detect_enum_conflict!, name, scope_name, true)
         klass.scope scope_name, -> { klass.where name => value }
       end
-
-      # Product::RED #=> "red"
-      const_set value.to_s.upcase, value.to_s
     end
 
     define_attr_i18n_method(self, name, i18n_scope)
