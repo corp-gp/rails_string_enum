@@ -99,7 +99,7 @@ Product.only_red # if scopes: true
 Product.only_reds # if scopes: { pluralize: true }
 ```
 
-Using constants to any `Class` or `Module`
+#### Using constants to any `Class` or `Module`
 ```ruby
 module ValidateStatesFromApi
 
@@ -109,7 +109,7 @@ module ValidateStatesFromApi
 end
 ```
 
-I18n local file example (compatible with https://github.com/zmbacker/enum_help):
+#### I18n local file example (compatible with https://github.com/zmbacker/enum_help):
 
 ```yaml
 # config/locals/ru.yml
@@ -122,7 +122,7 @@ ru:
         yellow: Желтый
 ```
 
-Support `simple_form`:
+#### Support `simple_form`:
 ```erb
 <%= f.input :color %>
 ```
