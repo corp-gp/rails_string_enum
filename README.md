@@ -1,5 +1,5 @@
 ## rails_string_enum
-support in rails db enums or string (using as flexible enum)
+support in rails native postgresql enums or string (using as flexible enum)
 
 This gem inspired rails native enum and  https://github.com/zmbacker/enum_help
 ## Installation
@@ -11,11 +11,7 @@ Add this line to your application's Gemfile:
 
 Tested on Rails 4.2, ruby 2.2
 
-#### Broken changes from 0.1 to 0.2
-`Product::COLOR::GREEN -> Product::GREEN`
 
-#### Broken changes from 0.2 to 0.3
-`added prefix for scopes: Product.red -> Product.only_red or Product.only_reds`
 
 #### Native postgresql enum (migrations)
 ```ruby
@@ -28,18 +24,20 @@ add_enum_value :color, 'black', after: 'red'
 add_enum_value :color, 'black', before: 'blue'
 add_enum_value :color, 'black', schema: 'public'
 
+# add_enum_value cannot run inside a transaction block, using outside change method
+
 drop_enum :color
 drop_enum :color, schema: 'cmyk'
 
 rename_enum_value :color, 'gray', 'black'
-reorder_enum_values :order_state_enum, %w(black white) # other color will be latest
+reorder_enum_values :color, %w(black white) # other color will be latest
 
 delete_enum_value :color, 'black'
 # you should delete record with deleting value
 # if exists index with condition, method raise exception
-# "ERROR: operator does not exist: order_type_enum <> order_type_enum_new"
+# "ERROR: operator does not exist: color <> color_new"
 # you should first remove and then create an index
-  Product.where(color: 'black').delete_all # or Product.where(color: 'black').update_all(state: nil)
+  Product.where(color: 'black').delete_all # or Product.where(color: 'black').update_all(color: nil)
   remove_index :product, :color, where: "color NOT IN ('pink')"
   delete_enum_value :color, 'black'
   add_index :product, :color, where: "color NOT IN ('pink')"
@@ -61,9 +59,9 @@ class CreateTables < ActiveRecord::Migration
     create_table :products do |t|
       t.string :color
     end
-    
+
     create_enum :enum_color, %w(red green blue)
-    
+
     create_table :pages do |t|
       t.column :color, :enum_color, default: 'red'
     end
@@ -72,7 +70,7 @@ end
 
 class Product < ActiveRecord::Base
   string_enum :color, %w(red green yellow black white), scopes: true # default false
-  
+
   def self.colored
     where.not(color: [BLACK, WHITE])
   end
@@ -101,6 +99,15 @@ Product.only_red # if scopes: true
 Product.only_reds # if scopes: { pluralize: true }
 ```
 
+Using constants to any `Class` or `Module`
+```ruby
+module ValidateStatesFromApi
+
+  extend MixinStringEnum
+  string_enum :states, %w(accept obtain canceled lost)
+
+end
+```
 
 I18n local file example (compatible with https://github.com/zmbacker/enum_help):
 
@@ -141,4 +148,3 @@ Calculating -------------------------------------
  rails_string_enum_c     38.159k (± 5.3%) i/s -    192.128k
          enum_help_c     15.939k (± 4.5%) i/s -     80.272k
 ```
-

@@ -1,4 +1,4 @@
-module RailsStringEnum
+module ActiveRecordStringEnum
 
   # product.rb
   # string_enum :color, %w(red green yellow)

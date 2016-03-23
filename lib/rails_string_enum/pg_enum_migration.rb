@@ -2,7 +2,7 @@ module PgEnumMigrations
 
   # create_enum :color, %w(red green blue) # default schema is 'public'
   # create_enum :color, %w(red green blue), schema: 'cmyk'
-  def create_enum(enum_name, values, schema: nil)
+  def create_enum(enum_name, values, schema: 'public')
     execute "CREATE TYPE #{enum_name(enum_name, schema)} AS ENUM (#{escape_enum_values(values)})"
   end
 
@@ -11,12 +11,13 @@ module PgEnumMigrations
   # add_enum_value :color, 'purple', after: 'red'
   # add_enum_value :color, 'pink', before: 'purple'
   # add_enum_value :color, 'white', schema: 'public'
-  def add_enum_value(enum_name, value, before: nil, after: nil, schema: nil)
+  # **WARN** cannot run inside a transaction block
+  def add_enum_value(enum_name, value, before: nil, after: nil, schema: 'public')
     opts = if    before then "BEFORE #{escape_enum_value(before)}"
            elsif after  then "AFTER #{escape_enum_value(after)}"
            else  ''
            end
-    execute "ALTER TYPE #{enum_name(enum_name, schema)} ADD VALUE #{escape_enum_value(value)} #{opts}"
+    execute "ALTER TYPE #{enum_name(enum_name, schema)} ADD VALUE IF NOT EXISTS #{escape_enum_value(value)} #{opts}"
   end
 
   # drop_enum :color
@@ -27,15 +28,15 @@ module PgEnumMigrations
 
 
   # you should delete record with deleting value
-  # Order.back_picking.delete_all or Order.back_picking.update_all(state: nil)
+  # Product.only_purple.delete_all or Product.purple.update_all(color: nil)
   #
-  # if exists index with condition - add_index :orders, :state, where: "state NOT IN ('closed', 'canceled', 'returned')"
-  # this method show exeption ERROR: operator does not exist: order_type_enum <> order_type_enum_new
+  # if exists index with condition - add_index :products, :color, where: "color NOT IN ('white', 'black')"
+  # this method show exeption ERROR: operator does not exist: color <> color_new
   # you must first remove and then create an index
   #
-  # delete_enum_value :order_state_enum, 'back_picking'
-  def delete_enum_value(enum_name, value_name, scheme: nil)
-    old_values = select_values("SELECT enumlabel FROM pg_catalog.pg_enum WHERE enumtypid = #{enum_name_as_srt(enum_name, scheme)}::regtype::oid")
+  # delete_enum_value :color, 'black'
+  def delete_enum_value(enum_name, value_name, scheme: 'public')
+    old_values = select_values("SELECT enumlabel FROM pg_catalog.pg_enum WHERE enumtypid = '#{scheme}.#{enum_name}'::regtype::oid")
     new_values = old_values - Array(value_name)
 
     execute <<-SQL
@@ -43,8 +44,11 @@ module PgEnumMigrations
       CREATE TYPE #{enum_name} AS enum (#{escape_enum_values(new_values)});
     SQL
 
-    cols_using_enum = select_rows("SELECT table_name, column_name FROM information_schema.columns WHERE udt_name = '#{enum_name}_old'")
-    cols_using_enum.each do |table_name, column_name|
+    cols_using_enum = select_rows("SELECT table_name, column_name, column_default FROM information_schema.columns WHERE udt_name = '#{enum_name}_old'")
+    cols_using_enum.each do |table_name, column_name, column_default|
+      unless column_default.nil?
+        raise "column #{table_name}.#{column_name} has default value #{column_default}, you must manually drop default"
+      end
       execute <<-SQL
         ALTER TABLE #{table_name}
         ALTER COLUMN #{column_name} TYPE #{enum_name} USING #{column_name}::text::#{enum_name};
@@ -58,7 +62,7 @@ module PgEnumMigrations
 
 
 
-  # rename_enum_value :order_state_enum, 'accept', 'init'
+  # rename_enum_value :color, 'white', 'pale'
   def rename_enum_value(enum_name, old_value_name, new_value_name, scheme: 'public')
     execute <<-SQL
       UPDATE pg_catalog.pg_enum
@@ -69,8 +73,8 @@ module PgEnumMigrations
 
 
 
-  # reorder_enum_values :order_state_enum, %w(lost returning obtain accept)
-  def reorder_enum_values(enum_name, ordered_values, scheme: nil)
+  # reorder_enum_values :color, %w(green pale red blue)
+  def reorder_enum_values(enum_name, ordered_values, scheme: 'public')
     all_values = select_values("SELECT enumlabel FROM pg_catalog.pg_enum WHERE enumtypid = '#{scheme}.#{enum_name}'::regtype::oid")
     max_order =  select_value("SELECT max(enumsortorder) FROM pg_catalog.pg_enum WHERE enumtypid = '#{scheme}.#{enum_name}'::regtype::oid").to_i + 1
 
@@ -79,7 +83,7 @@ module PgEnumMigrations
     execute <<-SQL
       UPDATE pg_catalog.pg_enum
       SET enumsortorder = CASE enumlabel #{ordered_sql} END
-      WHERE enumtypid = #{enum_name_as_srt(enum_name, scheme)}::regtype::oid
+      WHERE enumtypid = '#{scheme}.#{enum_name}'::regtype::oid
     SQL
   end
 
@@ -107,12 +111,6 @@ module PgEnumMigrations
   def enum_name(name, schema)
     [schema || 'public', name].map { |s|
       %Q{"#{s}"}
-    }.join('.')
-  end
-
-  def enum_name_as_srt(name, schema)
-    [schema || 'public', name].map { |s|
-      %Q{'#{s}'}
     }.join('.')
   end
 
