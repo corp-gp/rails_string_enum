@@ -19,6 +19,12 @@ end
 
 begin
   require 'simple_form'
-  require 'rails_string_enum/simple_form'
+
+  begin
+    require('enum_help')
+  rescue LoadError
+    require 'rails_string_enum/simple_form'
+  end
+
 rescue LoadError
 end
