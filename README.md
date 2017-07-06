@@ -46,7 +46,7 @@ delete_enum_value :color, 'black'
 ###### Convert exist columns (int, string) to postgresql enum
 ```ruby
 string_to_enums :product, :color, enum_name: 'product_color_enum', definitions: %w(red green blue), default: 'green'
-string_to_enums :product, :color, enum_name: 'product_color_enum', definitions: Product.uniq.pluck(:color)
+string_to_enums :product, :color, enum_name: 'product_color_enum', definitions: Product.unscoped.uniq.pluck(:color).compact
 
 int_to_enums :product, :color, enum_name: 'product_color_enum', definitions: { red: 0, green: 1, blue: 2 }
 ```
