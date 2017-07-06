@@ -1,22 +1,21 @@
 require 'simple_form'
 
+module BuilderExtensionWithEnum
+  def default_input_type(*args, &block)
+    attr_name = (args.first || @attribute_name).to_s
+    options = args.last
+
+    const_for_attr = object.respond_to? "#{attr_name}_i18n"
+
+    return :enum_radio_buttons if options.is_a?(Hash) && options[:as] == :radio_buttons && const_for_attr
+    return :enum if (options.is_a?(Hash) ? options[:as] : @options[:as]).nil? && const_for_attr
+
+    super(*args, &block)
+  end
+end
+
 module EnumHelp
   module SimpleForm
-    module BuilderExtension
-
-      def default_input_type_with_enum(*args, &block)
-        attr_name = (args.first || @attribute_name).to_s
-        options = args.last
-
-        const_for_attr = object.respond_to? "#{attr_name}_i18n"
-
-        return :enum_radio_buttons if options.is_a?(Hash) && options[:as] == :radio_buttons && const_for_attr
-        return :enum if (options.is_a?(Hash) ? options[:as] : @options[:as]).nil? && const_for_attr
-
-        default_input_type_without_enum(*args, &block)
-      end
-    end
-
     module InputExtension
 
       def initialize(*args)
@@ -59,11 +58,9 @@ end
 
 
 SimpleForm::FormBuilder.class_eval do
-  include EnumHelp::SimpleForm::BuilderExtension
-
   map_type :enum,               :to => EnumHelp::SimpleForm::EnumInput
   map_type :enum_radio_buttons, :to => EnumHelp::SimpleForm::EnumRadioButtons
   alias_method :collection_enum_radio_buttons, :collection_radio_buttons
   alias_method :collection_enum, :collection_select
-  alias_method_chain :default_input_type, :enum
+  prepend BuilderExtensionWithEnum
 end
