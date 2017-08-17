@@ -5,11 +5,17 @@ module ActiveRecordStringEnum
   # page.rb
   # string_enum :background, %w(red green), i18n_scope: 'product.color', scopes: { pluralize: true }
 
-  def string_enum(name, enums, scopes: false, i18n_scope: nil)
+  def string_enum(name, enums, scopes: false, i18n_scope: nil, def_value_methods: true)
     # create constant with all values
     # Product::COLORS # => ["red", "green", "yellow"]
     const_name_all_values = name.to_s.pluralize.upcase
     const_set const_name_all_values, enums.map(&:to_s)
+
+    define_attr_i18n_method(self, name, i18n_scope)
+    define_collection_i18n_method(self, name, i18n_scope)
+    define_collection_i18n_method_for_value(self, name, i18n_scope)
+
+    return unless def_value_methods
 
     klass = self
     enums.each do |value|
@@ -36,10 +42,6 @@ module ActiveRecordStringEnum
         klass.scope scope_name, -> { klass.where name => value }
       end
     end
-
-    define_attr_i18n_method(self, name, i18n_scope)
-    define_collection_i18n_method(self, name, i18n_scope)
-    define_collection_i18n_method_for_value(self, name, i18n_scope)
   end
 
 
