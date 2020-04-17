@@ -39,7 +39,7 @@ module ActiveRecordStringEnum
         # scope :only_reds, -> { where color: 'red' } # if scopes: { pluralize: true }
         scope_name = scopes.try(:fetch, :pluralize, nil) ? "only_#{value.to_s.pluralize}" : "only_#{value}"
         klass.send(:detect_enum_conflict!, name, scope_name, true)
-        klass.scope scope_name, -> { klass.where name => value }
+        klass.scope scope_name, -> { where name => value }
       end
     end
   end
