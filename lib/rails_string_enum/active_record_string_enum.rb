@@ -16,18 +16,35 @@ module ActiveRecordStringEnum
 
     # create constant with all values
     # Product::STATUSES # => ["active", "archived"]
-    const_name_all_values = attr.to_s.pluralize.upcase
-    const_set const_name_all_values, enums.map(&:to_s)
-
-    define_attr_i18n_method(self, attr, i18n_scope)
-    define_collection_i18n_method(self, attr, i18n_scope)
-    define_collection_i18n_method_for_value(self, attr, i18n_scope)
+    const_set attr.to_s.pluralize.upcase, enums.map(&:to_s).freeze
 
     klass = self
 
-    enums.each do |value|
-      # Product::ACTIVE #=> "active"
+    i18n_scope ||= "#{klass.base_class.to_s.underscore}.#{attr}"
 
+    klass.class_eval <<-RUBY, __FILE__, __LINE__ + 1
+      # def state_i18n
+      #   ::I18n.t(state, scope: "enums.product.state", default: state)
+      # end
+
+      def #{attr}_i18n
+        ::I18n.t(#{attr}, scope: "enums.#{i18n_scope}", default: #{attr})
+      end
+    RUBY
+
+    klass.instance_eval <<-RUBY, __FILE__, __LINE__ + 1
+      # def state_i18n_for(enum)
+      #   ::I18n.t(enum, scope: "enums.product.state", default: enum)
+      # end
+
+      def #{attr}_i18n_for(enum)
+        ::I18n.t(enum, scope: "enums.#{i18n_scope}", default: enum)
+      end
+    RUBY
+
+    define_collection_i18n_method(self, attr, i18n_scope)
+
+    enums.each do |value|
       value_method_name =
         if prefix_field
           "#{attr}_#{value}"
@@ -35,19 +52,18 @@ module ActiveRecordStringEnum
           value
         end
 
+      # Product::ACTIVE #=> "active"
       const_set value_method_name.upcase, value.to_s
 
-      # def active?() status == "active" end
-      klass.send(:detect_enum_conflict!, attr, "#{value_method_name}?")
-      klass.class_eval <<-METHOD, __FILE__, __LINE__
-        def #{value_method_name}?
-          #{attr} == #{value_method_name.to_s.upcase}
-        end
-      METHOD
+      klass.class_eval <<-RUBY, __FILE__, __LINE__ + 1
+        # def active?
+        #   state == 'active'
+        # end
 
-      # def active!() update!(status: 'active') end
-      klass.send(:detect_enum_conflict!, attr, "#{value_method_name}!")
-      define_method("#{value_method_name}!") { update!(attr => value) }
+        def #{value_method_name}?
+          #{attr} == '#{value_method_name}'
+        end
+      RUBY
 
       if scopes
         # scope :only_active,  -> { where(color: 'active') }
@@ -59,59 +75,21 @@ module ActiveRecordStringEnum
     end
   end
 
-
-  # @product.status_i18n => 'Активный'
-  private def define_attr_i18n_method(klass, attr_name, i18n_scope)
-    attr_i18n_method_name = "#{attr_name}_i18n"
-
-    klass.class_eval <<-METHOD, __FILE__, __LINE__
-      def #{attr_i18n_method_name}
-        if enum_label = self.send(:#{attr_name})
-          #{ruby_string_for_enum_label(klass, attr_name, i18n_scope)}
-        else
-          nil
-        end
-      end
-
-      def #{attr_i18n_method_name}_for
-          #{ruby_string_for_enum_label(klass, attr_name, i18n_scope)}
-      end
-    METHOD
-  end
-
-  # Product.status_i18n_for('active') => 'Активный'
-  private def define_collection_i18n_method_for_value(klass, attr_name, i18n_scope)
-    attr_i18n_method_name = "#{attr_name}_i18n"
-
-    klass.instance_eval <<-METHOD, __FILE__, __LINE__
-      def #{attr_i18n_method_name}_for(enum_label)
-        return nil unless enum_label
-        #{ruby_string_for_enum_label(klass, attr_name, i18n_scope)}
-      end
-    METHOD
-  end
-
   # Product.statuses_i18n => { active: 'Активный', archived: 'В архивне' }
   private def define_collection_i18n_method(klass, attr_name, i18n_scope)
     collection_method_name = "#{attr_name.to_s.pluralize}_i18n"
     collection_const_name = "#{attr_name.to_s.pluralize.upcase}"
 
-    klass.instance_eval <<-METHOD, __FILE__, __LINE__
+    klass.instance_eval <<-RUBY, __FILE__, __LINE__ + 1
       def #{collection_method_name}
         h = HashWithIndifferentAccess.new
-        self::#{collection_const_name}.each do |enum_label|
-          h[enum_label] = #{ruby_string_for_enum_label(klass, attr_name, i18n_scope)}
+        self::#{collection_const_name}.each do |enum|
+          h[enum] = ::I18n.t(enum, scope: "enums.#{i18n_scope}", default: enum)
         end
         h
       end
-    METHOD
+    RUBY
   end
-
-  private def ruby_string_for_enum_label(klass, attr_name, i18n_scope)
-    part_scope = i18n_scope || "#{klass.base_class.to_s.underscore}.#{attr_name}"
-    %Q{::I18n.t(enum_label, scope: "enums.#{part_scope}", default: enum_label)}
-  end
-
 
   # for combinations constants to array, using `__` for split it
   # Product::RED__GREEN__YELLOW #=> ["red", "green", "yellow"]
@@ -120,7 +98,7 @@ module ActiveRecordStringEnum
     name_s = name.to_s
     return super unless name_s.include?('__')
 
-    const_set name_s, name_s.split('__').map { |i| const_get(i) }
+    const_set name_s, name_s.split('__').map { |i| const_get(i) }.freeze
   end
 
 

@@ -9,10 +9,6 @@ Add this line to your application's Gemfile:
     gem 'rails_string_enum'
 
 
-Tested on Rails 4.2, ruby 2.2
-
-
-
 #### Native postgresql enum (migrations)
 ```ruby
 
@@ -99,14 +95,20 @@ Product.only_red # if scopes: true
 Product.only_reds # if scopes: { pluralize: true }
 ```
 
-#### Using constants to any `Class` or `Module`
+#### Using in https://github.com/discourse/mini_sql
 ```ruby
-module ValidateStatesFromApi
+module LineItemDecorator
 
-  extend MixinStringEnum
-  string_enum :states, %w(accept obtain canceled lost)
+  include StringEnum[:state, %w[choice in_delivery], i18n_scope: 'line_item.state']
 
 end
+
+records =
+  MiniSql::Connection.get().query_decorator(LineItemDecorator, <<~SQL)
+    SELECT id, state FROM line_items LIMIT 1
+  SQL
+records[0].choice? #=> true
+records[0].state_i18n  #=> "В корзине"
 ```
 
 #### I18n local file example (compatible with https://github.com/zmbacker/enum_help):
@@ -125,26 +127,4 @@ ru:
 #### Support `simple_form`:
 ```erb
 <%= f.input :color %>
-```
-
-#### Benchmark i18n methods (rails_string_enum faster 2x then enum_help)
-
-```ruby
-Benchmark.ips do |x|
-  x.report('rails_string_enum')   { u.social_app_i18n }
-  x.report('enum_help')           { u.social_app_i18n_eh }
-  x.report('rails_string_enum_c') { Order.states_i18n }
-  x.report('enum_help_c')         { Order.states_i18n_eh }
-end
-
-Calculating -------------------------------------
-   rails_string_enum     3.149k i/100ms
-           enum_help     1.489k i/100ms
- rails_string_enum_c     3.002k i/100ms
-         enum_help_c     1.384k i/100ms
--------------------------------------------------
-   rails_string_enum     42.727k (± 4.4%) i/s -    214.132k
-           enum_help     16.686k (±11.9%) i/s -     81.895k
- rails_string_enum_c     38.159k (± 5.3%) i/s -    192.128k
-         enum_help_c     15.939k (± 4.5%) i/s -     80.272k
 ```
