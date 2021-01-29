@@ -1,6 +1,9 @@
+# frozen_string_literal: true
+
 require 'simple_form'
 
 module BuilderExtensionWithEnum
+
   def default_input_type(*args, &block)
     attr_name = (args.first || @attribute_name).to_s
     options = args.last
@@ -12,6 +15,7 @@ module BuilderExtensionWithEnum
 
     super(*args, &block)
   end
+
 end
 
 module EnumHelp
@@ -23,11 +27,12 @@ module EnumHelp
         enum = input_options[:collection] || @builder.options[:collection]
         raise "Attribute '#{attribute_name}' has no enum class" unless enum ||= object.class.const_get(attribute_name.to_s.pluralize.upcase)
 
-        collect = begin
-          collection = object.class.send("#{attribute_name.to_s.pluralize}_i18n")
-          collection.slice!(*enum) if enum
-          collection.invert.to_a
-        end
+        collect =
+          begin
+            collection = object.class.send("#{attribute_name.to_s.pluralize}_i18n")
+            collection.slice!(*enum) if enum
+            collection.invert.to_a
+          end
 
         # collect.unshift [args.last[:prompt],''] if args.last.is_a?(Hash) && args.last[:prompt]
 
@@ -39,27 +44,38 @@ module EnumHelp
       end
 
     end
-
   end
 end
 
 
-class EnumHelp::SimpleForm::EnumInput < ::SimpleForm::Inputs::CollectionSelectInput
-  include EnumHelp::SimpleForm::InputExtension
-  def input_html_classes
-    super.push('form-control')
+module EnumHelp
+  module SimpleForm
+    class EnumInput < ::SimpleForm::Inputs::CollectionSelectInput
+
+      include EnumHelp::SimpleForm::InputExtension
+      def input_html_classes
+        super.push('form-control')
+      end
+
+    end
   end
 end
 
 
-class EnumHelp::SimpleForm::EnumRadioButtons < ::SimpleForm::Inputs::CollectionRadioButtonsInput
-  include EnumHelp::SimpleForm::InputExtension
+module EnumHelp
+  module SimpleForm
+    class EnumRadioButtons < ::SimpleForm::Inputs::CollectionRadioButtonsInput
+
+      include EnumHelp::SimpleForm::InputExtension
+
+    end
+  end
 end
 
 
 SimpleForm::FormBuilder.class_eval do
-  map_type :enum,               :to => EnumHelp::SimpleForm::EnumInput
-  map_type :enum_radio_buttons, :to => EnumHelp::SimpleForm::EnumRadioButtons
+  map_type :enum,               to: EnumHelp::SimpleForm::EnumInput
+  map_type :enum_radio_buttons, to: EnumHelp::SimpleForm::EnumRadioButtons
   alias_method :collection_enum_radio_buttons, :collection_radio_buttons
   alias_method :collection_enum, :collection_select
   prepend BuilderExtensionWithEnum

@@ -1,0 +1,9 @@
+inherit_gem:
+  rubocop-gp:
+    - .rubocop.yml
+
+Gp/ClassOrModuleDeclaredInWrongFile:
+  Enabled: false
+
+Gp/ModuleMethodInWrongFile:
+  Enabled: false
